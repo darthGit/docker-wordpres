@@ -1,0 +1,48 @@
+version: "3.9"
+
+services: 
+    nginx:
+        build: ./nginx 
+        ports:
+            - "80:80"
+        networks:
+            - frontend
+        depends_on:
+            - wordpress
+
+    wordpress:
+        image: wordpress:latest
+        volumes: 
+            - ${WP_HOME}:/var/www/html
+        networks:
+            - frontend
+            - backend
+        depends_on:
+            - db
+        deploy:
+            mode: replicated
+            replicas: 3
+        environment: 
+            WORDPRESS_DB_HOST: db:3306
+            WORDPRESS_DB_USER: ${DB_USER}
+            WORDPRESS_DB_PASSWORD: ${DB_PASS}
+            WORDPRESS_DB_NAME: ${DB_NAME}
+    
+    db:
+        image: mysql:latest
+        volumes: 
+            - ${MYSQL_HOME}:/var/lib/mysql
+        networks:
+            - backend
+        cap_add:
+            - SYS_NICE
+        environment: 
+            MYSQL_USER: ${DB_USER}
+            MYSQL_PASSWORD: ${DB_PASS}
+            MYSQL_DATABASE: ${DB_NAME}
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
+
+networks:
+    frontend: {}
+    backend: 
+        internal: true
